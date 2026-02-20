@@ -1,0 +1,1150 @@
+
+
+<!DOCTYPE html>
+
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Receipts">
+<title>Receipts</title>
+<style>
+  :root {
+    --bg: #f2f2f7;
+    --card: #ffffff;
+    --card2: #f9f9fb;
+    --blue: #007aff;
+    --blue-light: rgba(0,122,255,0.1);
+    --red: #ff3b30;
+    --green: #34c759;
+    --orange: #ff9500;
+    --label: #000000;
+    --label2: #3c3c43;
+    --label3: rgba(60,60,67,0.6);
+    --label4: rgba(60,60,67,0.18);
+    --sep: rgba(60,60,67,0.29);
+    --sep-light: rgba(60,60,67,0.12);
+    --font: -apple-system, "SF Pro Display", "SF Pro Text", "Helvetica Neue", sans-serif;
+    --radius: 13px;
+    --radius-sm: 10px;
+    --safe-top: env(safe-area-inset-top, 0px);
+    --safe-bottom: env(safe-area-inset-bottom, 0px);
+  }
+
+- { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+
+body {
+font-family: var(–font);
+background: var(–bg);
+color: var(–label);
+min-height: 100dvh;
+overscroll-behavior: none;
+-webkit-font-smoothing: antialiased;
+}
+
+/* ── Navigation ── */
+.nav {
+position: sticky;
+top: 0;
+z-index: 100;
+background: rgba(242,242,247,0.92);
+backdrop-filter: saturate(180%) blur(20px);
+-webkit-backdrop-filter: saturate(180%) blur(20px);
+border-bottom: 0.5px solid var(–sep);
+padding-top: var(–safe-top);
+}
+.nav-inner {
+display: flex;
+align-items: center;
+justify-content: space-between;
+padding: 12px 16px 10px;
+}
+.nav-title {
+font-size: 17px;
+font-weight: 600;
+letter-spacing: -0.4px;
+}
+.nav-large-title {
+font-size: 34px;
+font-weight: 700;
+letter-spacing: 0.37px;
+padding: 4px 16px 8px;
+}
+.btn-text {
+font-family: var(–font);
+font-size: 17px;
+color: var(–blue);
+background: none;
+border: none;
+cursor: pointer;
+padding: 0;
+font-weight: 400;
+}
+.btn-text:active { opacity: 0.5; }
+
+/* ── Views ── */
+.view { display: none; flex-direction: column; min-height: 100dvh; }
+.view.active { display: flex; }
+
+/* ── List View ── */
+.list-content {
+flex: 1;
+padding: 0 0 calc(90px + var(–safe-bottom));
+overflow-y: auto;
+}
+.section-header {
+font-size: 13px;
+font-weight: 400;
+color: var(–label3);
+text-transform: uppercase;
+letter-spacing: 0.08em;
+padding: 18px 16px 6px;
+}
+.receipt-list {
+background: var(–card);
+border-radius: var(–radius);
+margin: 0 16px;
+overflow: hidden;
+box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+}
+.receipt-item {
+display: flex;
+align-items: center;
+padding: 12px 16px;
+gap: 12px;
+cursor: pointer;
+transition: background 0.12s;
+position: relative;
+}
+.receipt-item:not(:last-child)::after {
+content: ‘’;
+position: absolute;
+bottom: 0;
+left: 60px;
+right: 0;
+height: 0.5px;
+background: var(–sep-light);
+}
+.receipt-item:active { background: var(–bg); }
+.receipt-icon {
+width: 40px;
+height: 40px;
+border-radius: 10px;
+background: var(–blue-light);
+display: flex;
+align-items: center;
+justify-content: center;
+font-size: 20px;
+flex-shrink: 0;
+}
+.receipt-info { flex: 1; min-width: 0; }
+.receipt-vendor {
+font-size: 17px;
+font-weight: 400;
+letter-spacing: -0.24px;
+white-space: nowrap;
+overflow: hidden;
+text-overflow: ellipsis;
+}
+.receipt-date {
+font-size: 13px;
+color: var(–label3);
+margin-top: 2px;
+}
+.receipt-total {
+font-size: 17px;
+font-weight: 500;
+color: var(–label);
+letter-spacing: -0.24px;
+}
+.chevron {
+color: var(–label4);
+font-size: 14px;
+font-weight: 600;
+margin-left: 4px;
+}
+
+/* ── Empty State ── */
+.empty {
+display: flex;
+flex-direction: column;
+align-items: center;
+justify-content: center;
+padding: 80px 32px;
+gap: 12px;
+text-align: center;
+}
+.empty-icon { font-size: 56px; opacity: 0.2; }
+.empty-title { font-size: 22px; font-weight: 600; color: var(–label2); }
+.empty-sub { font-size: 15px; color: var(–label3); line-height: 1.4; }
+
+/* ── FAB ── */
+.fab-wrap {
+position: fixed;
+bottom: calc(16px + var(–safe-bottom));
+right: 20px;
+z-index: 50;
+display: flex;
+flex-direction: column;
+align-items: flex-end;
+gap: 10px;
+}
+.fab-btn {
+width: 56px;
+height: 56px;
+border-radius: 50%;
+border: none;
+cursor: pointer;
+display: flex;
+align-items: center;
+justify-content: center;
+box-shadow: 0 4px 16px rgba(0,0,0,0.18), 0 1px 4px rgba(0,0,0,0.1);
+transition: transform 0.15s, box-shadow 0.15s;
+font-size: 22px;
+}
+.fab-btn:active { transform: scale(0.93); }
+.fab-primary { background: var(–blue); color: #fff; }
+.fab-secondary { background: var(–card); color: var(–blue); width: 48px; height: 48px; font-size: 18px; }
+
+/* ── Camera View ── */
+.camera-view {
+background: #000;
+position: fixed;
+inset: 0;
+z-index: 200;
+display: none;
+flex-direction: column;
+}
+.camera-view.active { display: flex; }
+#video {
+flex: 1;
+width: 100%;
+object-fit: cover;
+}
+.camera-bar {
+background: rgba(0,0,0,0.85);
+display: flex;
+align-items: center;
+justify-content: space-between;
+padding: 20px 32px calc(20px + var(–safe-bottom));
+}
+.cam-cancel {
+color: #fff;
+font-size: 17px;
+background: none;
+border: none;
+cursor: pointer;
+font-family: var(–font);
+opacity: 0.85;
+}
+.cam-cancel:active { opacity: 0.4; }
+.shutter {
+width: 72px;
+height: 72px;
+border-radius: 50%;
+border: 4px solid #fff;
+background: none;
+cursor: pointer;
+position: relative;
+display: flex;
+align-items: center;
+justify-content: center;
+}
+.shutter::after {
+content: ‘’;
+width: 58px;
+height: 58px;
+border-radius: 50%;
+background: #fff;
+transition: transform 0.1s;
+}
+.shutter:active::after { transform: scale(0.88); }
+#canvas { display: none; }
+
+/* ── Modal / Sheet ── */
+.sheet-overlay {
+position: fixed;
+inset: 0;
+background: rgba(0,0,0,0.45);
+z-index: 300;
+display: none;
+align-items: flex-end;
+padding-bottom: var(–safe-bottom);
+animation: fadein 0.2s ease;
+}
+.sheet-overlay.active { display: flex; }
+@keyframes fadein { from { opacity: 0; } to { opacity: 1; } }
+.sheet {
+background: var(–card);
+border-radius: 20px 20px 0 0;
+width: 100%;
+max-height: 92dvh;
+overflow-y: auto;
+animation: slideup 0.3s cubic-bezier(0.32,0.72,0,1);
+}
+@keyframes slideup { from { transform: translateY(100%); } to { transform: translateY(0); } }
+.sheet-handle {
+width: 36px;
+height: 5px;
+background: var(–label4);
+border-radius: 3px;
+margin: 10px auto 0;
+}
+.sheet-header {
+display: flex;
+align-items: center;
+justify-content: space-between;
+padding: 16px 20px 12px;
+border-bottom: 0.5px solid var(–sep-light);
+}
+.sheet-title { font-size: 17px; font-weight: 600; letter-spacing: -0.3px; }
+.sheet-body { padding: 16px 20px; }
+
+/* ── Form Fields ── */
+.field-group {
+background: var(–bg);
+border-radius: var(–radius-sm);
+overflow: hidden;
+margin-bottom: 12px;
+}
+.field {
+display: flex;
+align-items: center;
+padding: 12px 14px;
+gap: 10px;
+position: relative;
+}
+.field:not(:last-child)::after {
+content: ‘’;
+position: absolute;
+bottom: 0;
+left: 14px;
+right: 0;
+height: 0.5px;
+background: var(–sep-light);
+}
+.field label {
+font-size: 15px;
+color: var(–label3);
+width: 70px;
+flex-shrink: 0;
+}
+.field input {
+flex: 1;
+font-family: var(–font);
+font-size: 15px;
+border: none;
+background: none;
+outline: none;
+color: var(–label);
+text-align: right;
+}
+.field textarea {
+flex: 1;
+font-family: var(–font);
+font-size: 14px;
+border: none;
+background: none;
+outline: none;
+color: var(–label);
+resize: none;
+min-height: 60px;
+line-height: 1.4;
+}
+
+/* ── OCR Preview ── */
+.ocr-preview {
+width: 100%;
+border-radius: var(–radius-sm);
+max-height: 200px;
+object-fit: cover;
+margin-bottom: 12px;
+}
+.status-bar {
+display: flex;
+align-items: center;
+gap: 8px;
+padding: 10px 14px;
+border-radius: var(–radius-sm);
+font-size: 14px;
+margin-bottom: 12px;
+}
+.status-bar.loading { background: var(–blue-light); color: var(–blue); }
+.status-bar.success { background: rgba(52,199,89,0.12); color: var(–green); }
+.status-bar.error { background: rgba(255,59,48,0.1); color: var(–red); }
+
+.spinner {
+width: 16px;
+height: 16px;
+border: 2px solid currentColor;
+border-top-color: transparent;
+border-radius: 50%;
+animation: spin 0.7s linear infinite;
+flex-shrink: 0;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ── Detail View ── */
+.detail-view {
+background: var(–bg);
+position: fixed;
+inset: 0;
+z-index: 150;
+display: none;
+flex-direction: column;
+overflow-y: auto;
+}
+.detail-view.active { display: flex; }
+.detail-nav {
+position: sticky;
+top: 0;
+background: rgba(242,242,247,0.92);
+backdrop-filter: saturate(180%) blur(20px);
+-webkit-backdrop-filter: saturate(180%) blur(20px);
+border-bottom: 0.5px solid var(–sep);
+padding-top: var(–safe-top);
+}
+.detail-nav-inner {
+display: flex;
+align-items: center;
+justify-content: space-between;
+padding: 12px 16px;
+}
+.back-btn {
+display: flex;
+align-items: center;
+gap: 4px;
+color: var(–blue);
+font-size: 17px;
+background: none;
+border: none;
+cursor: pointer;
+font-family: var(–font);
+}
+.back-btn:active { opacity: 0.5; }
+.detail-content { padding: 20px 16px calc(40px + var(–safe-bottom)); }
+.receipt-image-full {
+width: 100%;
+border-radius: var(–radius);
+margin-bottom: 16px;
+box-shadow: 0 4px 20px rgba(0,0,0,0.12);
+}
+.info-card {
+background: var(–card);
+border-radius: var(–radius);
+overflow: hidden;
+margin-bottom: 12px;
+box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+}
+.info-row {
+display: flex;
+align-items: center;
+padding: 13px 16px;
+position: relative;
+}
+.info-row:not(:last-child)::after {
+content: ‘’;
+position: absolute;
+bottom: 0;
+left: 16px;
+right: 0;
+height: 0.5px;
+background: var(–sep-light);
+}
+.info-label { font-size: 15px; color: var(–label3); flex: 1; }
+.info-value { font-size: 15px; font-weight: 500; max-width: 60%; text-align: right; word-break: break-word; }
+.info-value.total { color: var(–blue); font-size: 18px; font-weight: 600; }
+
+.ocr-text-block {
+background: var(–card);
+border-radius: var(–radius);
+padding: 14px 16px;
+font-size: 12px;
+font-family: “SF Mono”, Menlo, monospace;
+color: var(–label3);
+line-height: 1.6;
+white-space: pre-wrap;
+word-break: break-word;
+max-height: 200px;
+overflow-y: auto;
+margin-bottom: 12px;
+}
+
+.delete-btn {
+display: block;
+width: 100%;
+padding: 14px;
+background: var(–card);
+border: none;
+border-radius: var(–radius);
+font-family: var(–font);
+font-size: 17px;
+color: var(–red);
+cursor: pointer;
+margin-bottom: 12px;
+box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+}
+.delete-btn:active { background: rgba(255,59,48,0.08); }
+
+/* ── API Key Setup ── */
+.setup-card {
+background: var(–card);
+border-radius: var(–radius);
+padding: 20px;
+margin: 16px;
+box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+}
+.setup-card h3 { font-size: 17px; font-weight: 600; margin-bottom: 6px; }
+.setup-card p { font-size: 14px; color: var(–label3); line-height: 1.5; margin-bottom: 14px; }
+.setup-input {
+width: 100%;
+padding: 12px 14px;
+font-family: var(–font);
+font-size: 15px;
+border: 1px solid var(–sep);
+border-radius: var(–radius-sm);
+background: var(–bg);
+outline: none;
+margin-bottom: 10px;
+}
+.setup-input:focus { border-color: var(–blue); }
+.btn-primary {
+display: block;
+width: 100%;
+padding: 14px;
+background: var(–blue);
+color: #fff;
+border: none;
+border-radius: var(–radius-sm);
+font-family: var(–font);
+font-size: 17px;
+font-weight: 600;
+cursor: pointer;
+text-align: center;
+}
+.btn-primary:active { background: #0062cc; }
+
+/* ── Toasts ── */
+.toast {
+position: fixed;
+bottom: calc(90px + var(–safe-bottom));
+left: 50%;
+transform: translateX(-50%) translateY(20px);
+background: rgba(40,40,40,0.9);
+color: #fff;
+padding: 10px 20px;
+border-radius: 20px;
+font-size: 14px;
+font-weight: 500;
+backdrop-filter: blur(10px);
+white-space: nowrap;
+opacity: 0;
+transition: opacity 0.2s, transform 0.2s;
+pointer-events: none;
+z-index: 999;
+}
+.toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+/* ── Settings ── */
+.settings-section { margin: 16px; }
+.settings-section:first-child { margin-top: 20px; }
+
+/* ── Tab Bar ── */
+.tab-bar {
+position: fixed;
+bottom: 0;
+left: 0;
+right: 0;
+z-index: 100;
+background: rgba(249,249,251,0.94);
+backdrop-filter: saturate(180%) blur(20px);
+-webkit-backdrop-filter: saturate(180%) blur(20px);
+border-top: 0.5px solid var(–sep);
+display: flex;
+padding-bottom: var(–safe-bottom);
+}
+.tab-item {
+flex: 1;
+display: flex;
+flex-direction: column;
+align-items: center;
+padding: 8px 0 4px;
+cursor: pointer;
+gap: 3px;
+background: none;
+border: none;
+font-family: var(–font);
+}
+.tab-item:active { opacity: 0.5; }
+.tab-icon { font-size: 22px; }
+.tab-label { font-size: 10px; font-weight: 500; color: var(–label3); }
+.tab-item.active .tab-label { color: var(–blue); }
+.tab-item.active .tab-icon { filter: none; }
+
+/* ── Micro animations ── */
+@keyframes pop { 0%{transform:scale(0.95);opacity:0} 100%{transform:scale(1);opacity:1} }
+.receipt-item { animation: pop 0.18s ease; }
+</style>
+
+</head>
+<body>
+
+<!-- ═══════════════════════════════
+     LIST VIEW
+═══════════════════════════════ -->
+
+<div class="view active" id="view-list">
+  <div class="nav">
+    <div class="nav-large-title">Receipts</div>
+  </div>
+  <div class="list-content" id="list-content">
+    <div class="empty" id="empty-state">
+      <div class="empty-icon">🧾</div>
+      <div class="empty-title">No Receipts Yet</div>
+      <div class="empty-sub">Tap the camera button to scan your first receipt.</div>
+    </div>
+    <div id="receipts-list-wrap" style="display:none">
+      <div class="section-header" id="receipt-count-label"></div>
+      <div class="receipt-list" id="receipts-list"></div>
+    </div>
+  </div>
+  <div class="tab-bar">
+    <button class="tab-item active" onclick="switchTab('list')">
+      <span class="tab-icon">🧾</span>
+      <span class="tab-label">Receipts</span>
+    </button>
+    <button class="tab-item" onclick="switchTab('settings')">
+      <span class="tab-icon">⚙️</span>
+      <span class="tab-label">Settings</span>
+    </button>
+  </div>
+  <div class="fab-wrap">
+    <button class="fab-btn fab-primary" onclick="startCamera()" title="Scan Receipt">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
+        <circle cx="12" cy="13" r="4"/>
+      </svg>
+    </button>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════
+     SETTINGS VIEW
+═══════════════════════════════ -->
+
+<div class="view" id="view-settings">
+  <div class="nav">
+    <div class="nav-large-title">Settings</div>
+  </div>
+  <div class="list-content">
+    <div class="settings-section">
+      <div class="setup-card">
+        <h3>🔑 OCR.space API Key</h3>
+        <p>Get a free API key at ocr.space/ocrapi. Paste it below to enable receipt scanning.</p>
+        <input type="text" class="setup-input" id="api-key-input" placeholder="Paste your API key here…">
+        <button class="btn-primary" onclick="saveApiKey()">Save API Key</button>
+      </div>
+    </div>
+    <div class="settings-section">
+      <div class="setup-card">
+        <h3>📤 Export Data</h3>
+        <p>Download all your receipts as a CSV file for use in Excel or Google Sheets.</p>
+        <button class="btn-primary" onclick="exportCSV()" style="background:#34c759">Export to CSV</button>
+      </div>
+    </div>
+    <div class="settings-section">
+      <div class="setup-card" style="border: 1px solid rgba(255,59,48,0.2)">
+        <h3 style="color:var(--red)">🗑 Clear All Data</h3>
+        <p>Delete all receipts and stored data. This cannot be undone.</p>
+        <button class="btn-primary" style="background:var(--red)" onclick="clearAllData()">Clear All Receipts</button>
+      </div>
+    </div>
+  </div>
+  <div class="tab-bar">
+    <button class="tab-item" onclick="switchTab('list')">
+      <span class="tab-icon">🧾</span>
+      <span class="tab-label">Receipts</span>
+    </button>
+    <button class="tab-item active" onclick="switchTab('settings')">
+      <span class="tab-icon">⚙️</span>
+      <span class="tab-label">Settings</span>
+    </button>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════
+     CAMERA VIEW
+═══════════════════════════════ -->
+
+<div class="camera-view" id="camera-view">
+  <video id="video" autoplay playsinline muted></video>
+  <canvas id="canvas"></canvas>
+  <div class="camera-bar">
+    <button class="cam-cancel" onclick="stopCamera()">Cancel</button>
+    <button class="shutter" id="shutter-btn" onclick="capturePhoto()"></button>
+    <div style="width:60px"></div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════
+     DETAIL VIEW
+═══════════════════════════════ -->
+
+<div class="detail-view" id="detail-view">
+  <div class="detail-nav">
+    <div class="detail-nav-inner">
+      <button class="back-btn" onclick="closeDetail()">
+        <svg width="11" height="19" viewBox="0 0 11 19" fill="none">
+          <path d="M9.5 1.5L1.5 9.5L9.5 17.5" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        &nbsp;Receipts
+      </button>
+      <span style="font-size:17px;font-weight:600;letter-spacing:-0.3px" id="detail-nav-title"></span>
+      <div style="width:80px"></div>
+    </div>
+  </div>
+  <div class="detail-content" id="detail-content"></div>
+</div>
+
+<!-- ═══════════════════════════════
+     ADD RECEIPT SHEET
+═══════════════════════════════ -->
+
+<div class="sheet-overlay" id="add-sheet">
+  <div class="sheet">
+    <div class="sheet-handle"></div>
+    <div class="sheet-header">
+      <span class="sheet-title">New Receipt</span>
+      <button class="btn-text" onclick="closeSheet()">Cancel</button>
+    </div>
+    <div class="sheet-body">
+      <img id="preview-img" class="ocr-preview" style="display:none">
+      <div id="ocr-status" style="display:none" class="status-bar loading">
+        <div class="spinner"></div>
+        <span id="ocr-status-text">Scanning receipt…</span>
+      </div>
+      <div class="field-group">
+        <div class="field">
+          <label>Vendor</label>
+          <input type="text" id="f-vendor" placeholder="Store name">
+        </div>
+        <div class="field">
+          <label>Total</label>
+          <input type="number" id="f-total" placeholder="0.00" step="0.01">
+        </div>
+        <div class="field">
+          <label>Date</label>
+          <input type="date" id="f-date">
+        </div>
+        <div class="field" style="align-items:flex-start">
+          <label style="padding-top:2px">Notes</label>
+          <textarea id="f-notes" placeholder="Optional notes…"></textarea>
+        </div>
+      </div>
+      <button class="btn-primary" onclick="saveReceipt()">Save Receipt</button>
+    </div>
+  </div>
+</div>
+
+<!-- Toast -->
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ─── State ────────────────────────────────────────────────
+let receipts = [];
+let stream = null;
+let pendingImageData = null;
+let currentReceiptId = null;
+
+const DB_KEY = 'receipts_v2';
+const API_KEY_STORAGE = 'ocr_api_key';
+
+// ─── Init ─────────────────────────────────────────────────
+function init() {
+  receipts = JSON.parse(localStorage.getItem(DB_KEY) || '[]');
+  const saved = localStorage.getItem(API_KEY_STORAGE);
+  if (saved) document.getElementById('api-key-input').value = saved;
+  renderList();
+}
+
+// ─── Tab switching ────────────────────────────────────────
+function switchTab(tab) {
+  document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+  document.querySelectorAll('.tab-item').forEach(t => t.classList.remove('active'));
+  document.getElementById('view-' + tab).classList.add('active');
+  const tabBtns = document.querySelectorAll('.tab-item');
+  tabBtns.forEach(btn => {
+    if (btn.getAttribute('onclick') && btn.getAttribute('onclick').includes("'" + tab + "'"))
+      btn.classList.add('active');
+  });
+}
+
+// ─── API Key ──────────────────────────────────────────────
+function saveApiKey() {
+  const key = document.getElementById('api-key-input').value.trim();
+  if (!key) { showToast('Please enter an API key'); return; }
+  localStorage.setItem(API_KEY_STORAGE, key);
+  showToast('✓ API key saved');
+}
+
+function getApiKey() {
+  return localStorage.getItem(API_KEY_STORAGE) || '';
+}
+
+// ─── Camera ───────────────────────────────────────────────
+async function startCamera() {
+  if (!getApiKey()) {
+    showToast('Set your OCR API key in Settings first');
+    switchTab('settings');
+    return;
+  }
+  try {
+    stream = await navigator.mediaDevices.getUserMedia({
+      video: { facingMode: { ideal: 'environment' }, width: { ideal: 1920 }, height: { ideal: 1080 } },
+      audio: false
+    });
+    document.getElementById('video').srcObject = stream;
+    document.getElementById('camera-view').classList.add('active');
+  } catch (e) {
+    showToast('Camera access denied. Please allow camera in browser settings.');
+  }
+}
+
+function stopCamera() {
+  if (stream) { stream.getTracks().forEach(t => t.stop()); stream = null; }
+  document.getElementById('camera-view').classList.remove('active');
+}
+
+function capturePhoto() {
+  const video = document.getElementById('video');
+  const canvas = document.getElementById('canvas');
+  canvas.width = video.videoWidth;
+  canvas.height = video.videoHeight;
+  canvas.getContext('2d').drawImage(video, 0, 0);
+  pendingImageData = canvas.toDataURL('image/jpeg', 0.92);
+  stopCamera();
+  openSheet();
+}
+
+// ─── Sheet ────────────────────────────────────────────────
+function openSheet() {
+  // Reset form
+  ['f-vendor','f-total','f-notes'].forEach(id => document.getElementById(id).value = '');
+  document.getElementById('f-date').value = new Date().toISOString().split('T')[0];
+
+  const img = document.getElementById('preview-img');
+  if (pendingImageData) {
+    img.src = pendingImageData;
+    img.style.display = 'block';
+    runOCR(pendingImageData);
+  } else {
+    img.style.display = 'none';
+  }
+
+  document.getElementById('add-sheet').classList.add('active');
+}
+
+function closeSheet() {
+  document.getElementById('add-sheet').classList.remove('active');
+  document.getElementById('ocr-status').style.display = 'none';
+  pendingImageData = null;
+}
+
+// ─── OCR ──────────────────────────────────────────────────
+async function runOCR(dataUrl) {
+  const status = document.getElementById('ocr-status');
+  const statusText = document.getElementById('ocr-status-text');
+  status.style.display = 'flex';
+  status.className = 'status-bar loading';
+  statusText.textContent = 'Scanning receipt…';
+
+  try {
+    const blob = dataURItoBlob(dataUrl);
+    const form = new FormData();
+    form.append('file', blob, 'receipt.jpg');
+    form.append('apikey', getApiKey());
+    form.append('language', 'eng');
+    form.append('isOverlayRequired', 'false');
+    form.append('detectOrientation', 'true');
+    form.append('scale', 'true');
+    form.append('isTable', 'true');
+
+    const res = await fetch('https://api.ocr.space/parse/image', { method: 'POST', body: form });
+    const data = await res.json();
+
+    if (data.OCRExitCode === 1 && data.ParsedResults && data.ParsedResults[0]) {
+      const text = data.ParsedResults[0].ParsedText || '';
+      parseReceiptText(text);
+      status.className = 'status-bar success';
+      statusText.textContent = '✓ Text extracted — review & save';
+    } else {
+      const err = (data.ErrorMessage || ['Unknown OCR error']).join(', ');
+      status.className = 'status-bar error';
+      statusText.textContent = '⚠ ' + err;
+    }
+  } catch (e) {
+    status.className = 'status-bar error';
+    statusText.textContent = '⚠ Network error. Fill in manually.';
+  }
+}
+
+function parseReceiptText(text) {
+  // Total: look for largest currency value near "total"
+  let total = '';
+  const lines = text.split('\n');
+  const totalPatterns = [
+    /(?:total|amount|grand\s*total|balance\s*due|amt\s*due)[^\d]*(\d+[\.,]\d{2})/i,
+    /(\d+[\.,]\d{2})\s*(?:total|usd|aud|gbp|eur)?$/im
+  ];
+  for (const pat of totalPatterns) {
+    const m = text.match(pat);
+    if (m) { total = m[1].replace(',', '.'); break; }
+  }
+  if (!total) {
+    // Fallback: biggest dollar amount
+    const amounts = [...text.matchAll(/\$?\s*(\d+\.\d{2})/g)].map(m => parseFloat(m[1]));
+    if (amounts.length) total = Math.max(...amounts).toFixed(2);
+  }
+
+  // Date
+  let date = new Date().toISOString().split('T')[0];
+  const datePatterns = [
+    /(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{2,4})/,
+    /(\w{3,9})\s+(\d{1,2})[,\s]+(\d{4})/i,
+    /(\d{4})-(\d{2})-(\d{2})/
+  ];
+  for (const pat of datePatterns) {
+    const m = text.match(pat);
+    if (m) {
+      try {
+        const d = new Date(m[0]);
+        if (!isNaN(d)) { date = d.toISOString().split('T')[0]; break; }
+      } catch (e) {}
+    }
+  }
+
+  // Vendor: first non-empty line, or look for common patterns
+  let vendor = '';
+  for (const line of lines) {
+    const clean = line.trim().replace(/[^a-zA-Z0-9\s&'\-\.]/g, '').trim();
+    if (clean.length > 2 && clean.length < 50 && /[a-zA-Z]/.test(clean)) {
+      vendor = clean;
+      break;
+    }
+  }
+
+  if (total) document.getElementById('f-total').value = total;
+  if (vendor) document.getElementById('f-vendor').value = vendor;
+  if (date) document.getElementById('f-date').value = date;
+
+  // Store raw OCR text in notes if empty
+  if (!document.getElementById('f-notes').value) {
+    const cleaned = text.replace(/\s+/g, ' ').trim().substring(0, 300);
+    document.getElementById('f-notes').value = cleaned;
+  }
+}
+
+// ─── Save Receipt ─────────────────────────────────────────
+function saveReceipt() {
+  const vendor = document.getElementById('f-vendor').value.trim() || 'Unknown Vendor';
+  const total = parseFloat(document.getElementById('f-total').value) || 0;
+  const date = document.getElementById('f-date').value || new Date().toISOString().split('T')[0];
+  const notes = document.getElementById('f-notes').value.trim();
+
+  const receipt = {
+    id: Date.now().toString(),
+    vendor, total, date, notes,
+    image: pendingImageData || null,
+    createdAt: new Date().toISOString()
+  };
+
+  receipts.unshift(receipt);
+  persistReceipts();
+  renderList();
+  closeSheet();
+  showToast('✓ Receipt saved');
+}
+
+// ─── Persist ──────────────────────────────────────────────
+function persistReceipts() {
+  // Store without images in main key, images separately to avoid quota issues
+  const slim = receipts.map(r => ({ ...r, image: undefined }));
+  localStorage.setItem(DB_KEY, JSON.stringify(slim));
+  // Store images separately per id
+  receipts.forEach(r => {
+    if (r.image) {
+      try { localStorage.setItem('img_' + r.id, r.image); } catch(e) {}
+    }
+  });
+}
+
+function loadReceiptsWithImages() {
+  return receipts.map(r => ({
+    ...r,
+    image: r.image || localStorage.getItem('img_' + r.id) || null
+  }));
+}
+
+// ─── Render List ──────────────────────────────────────────
+function renderList() {
+  const empty = document.getElementById('empty-state');
+  const wrap = document.getElementById('receipts-list-wrap');
+  const list = document.getElementById('receipts-list');
+  const label = document.getElementById('receipt-count-label');
+
+  if (receipts.length === 0) {
+    empty.style.display = 'flex';
+    wrap.style.display = 'none';
+    return;
+  }
+  empty.style.display = 'none';
+  wrap.style.display = 'block';
+
+  const total = receipts.reduce((s, r) => s + (r.total || 0), 0);
+  label.textContent = `${receipts.length} receipt${receipts.length !== 1 ? 's' : ''} · $${total.toFixed(2)} total`;
+
+  list.innerHTML = receipts.map(r => `
+    <div class="receipt-item" onclick="openDetail('${r.id}')">
+      <div class="receipt-icon">${vendorEmoji(r.vendor)}</div>
+      <div class="receipt-info">
+        <div class="receipt-vendor">${escHtml(r.vendor)}</div>
+        <div class="receipt-date">${formatDate(r.date)}</div>
+      </div>
+      <div class="receipt-total">${r.total ? '$' + Number(r.total).toFixed(2) : '—'}</div>
+      <span class="chevron">›</span>
+    </div>
+  `).join('');
+}
+
+// ─── Detail ───────────────────────────────────────────────
+function openDetail(id) {
+  const r = loadReceiptsWithImages().find(x => x.id === id);
+  if (!r) return;
+  currentReceiptId = id;
+
+  document.getElementById('detail-nav-title').textContent = r.vendor;
+
+  const content = document.getElementById('detail-content');
+  content.innerHTML = `
+    ${r.image ? `<img src="${r.image}" class="receipt-image-full" alt="Receipt">` : ''}
+    <div class="info-card">
+      <div class="info-row">
+        <span class="info-label">Vendor</span>
+        <span class="info-value">${escHtml(r.vendor)}</span>
+      </div>
+      <div class="info-row">
+        <span class="info-label">Total</span>
+        <span class="info-value total">${r.total ? '$' + Number(r.total).toFixed(2) : 'N/A'}</span>
+      </div>
+      <div class="info-row">
+        <span class="info-label">Date</span>
+        <span class="info-value">${formatDate(r.date)}</span>
+      </div>
+      ${r.notes ? `<div class="info-row">
+        <span class="info-label">Notes</span>
+        <span class="info-value" style="font-size:13px;color:var(--label3)">${escHtml(r.notes.substring(0,200))}</span>
+      </div>` : ''}
+    </div>
+    <button class="delete-btn" onclick="deleteReceipt('${r.id}')">Delete Receipt</button>
+  `;
+
+  document.getElementById('detail-view').classList.add('active');
+}
+
+function closeDetail() {
+  document.getElementById('detail-view').classList.remove('active');
+  currentReceiptId = null;
+}
+
+function deleteReceipt(id) {
+  if (!confirm('Delete this receipt? This cannot be undone.')) return;
+  receipts = receipts.filter(r => r.id !== id);
+  localStorage.removeItem('img_' + id);
+  persistReceipts();
+  renderList();
+  closeDetail();
+  showToast('Receipt deleted');
+}
+
+// ─── Export CSV ───────────────────────────────────────────
+function exportCSV() {
+  if (receipts.length === 0) { showToast('No receipts to export'); return; }
+  const header = ['ID', 'Vendor', 'Total', 'Date', 'Notes', 'Created'];
+  const rows = receipts.map(r => [
+    r.id, csvEsc(r.vendor), r.total, r.date, csvEsc(r.notes || ''), r.createdAt
+  ]);
+  const csv = [header, ...rows].map(r => r.join(',')).join('\n');
+  const blob = new Blob([csv], { type: 'text/csv' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `receipts-${new Date().toISOString().split('T')[0]}.csv`;
+  a.click();
+  URL.revokeObjectURL(url);
+  showToast('✓ CSV exported');
+}
+
+function clearAllData() {
+  if (!confirm('Delete ALL receipts and data? This cannot be undone.')) return;
+  const keys = Object.keys(localStorage).filter(k => k.startsWith('img_'));
+  keys.forEach(k => localStorage.removeItem(k));
+  localStorage.removeItem(DB_KEY);
+  receipts = [];
+  renderList();
+  showToast('All data cleared');
+}
+
+// ─── Helpers ──────────────────────────────────────────────
+function dataURItoBlob(dataURI) {
+  const byteString = atob(dataURI.split(',')[1]);
+  const mimeString = dataURI.split(',')[0].split(':')[1].split(';')[0];
+  const ab = new ArrayBuffer(byteString.length);
+  const ia = new Uint8Array(ab);
+  for (let i = 0; i < byteString.length; i++) ia[i] = byteString.charCodeAt(i);
+  return new Blob([ab], { type: mimeString });
+}
+
+function formatDate(d) {
+  if (!d) return '';
+  try {
+    return new Date(d + 'T12:00:00').toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
+  } catch(e) { return d; }
+}
+
+function escHtml(s) {
+  return (s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function csvEsc(s) {
+  return '"' + (s || '').replace(/"/g, '""') + '"';
+}
+
+function vendorEmoji(vendor) {
+  const v = (vendor || '').toLowerCase();
+  if (/gas|shell|bp|chevron|exxon|fuel/.test(v)) return '⛽';
+  if (/grocery|food|market|whole|trader|walmart|kroger|safeway|aldi|publix/.test(v)) return '🛒';
+  if (/restaurant|cafe|coffee|starbucks|pizza|burger|taco|sushi|diner/.test(v)) return '🍽';
+  if (/amazon|ebay|target|costco|buy|shop|store/.test(v)) return '🛍';
+  if (/pharmacy|cvs|walgreen|drug|health/.test(v)) return '💊';
+  if (/hotel|inn|marriott|hilton|motel|airbnb/.test(v)) return '🏨';
+  if (/uber|lyft|taxi|transit|airline|flight/.test(v)) return '🚗';
+  return '🧾';
+}
+
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(t._timer);
+  t._timer = setTimeout(() => t.classList.remove('show'), 2400);
+}
+
+// ─── Start ────────────────────────────────────────────────
+init();
+</script>
+
+</body>
+</html>
